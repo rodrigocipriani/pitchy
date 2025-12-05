@@ -61,13 +61,8 @@
         width: 100%;
         height: 4px;
         cursor: pointer;
-        background: transparent; /* Transparent so bar behind shows */
+        background: rgba(255, 255, 255, 0.1);
         border-radius: 2px;
-      }
-
-      /* Specific track style for non-visual sliders */
-      .simple-range::-webkit-slider-runnable-track {
-        background: #374151;
       }
 
       /* Toggles */
@@ -674,7 +669,7 @@
       };
 
       /* -------------------------------------------------------------------------- */
-      /* WALL CLASS (DEFINED BEFORE USE)                                            */
+      /* WALL CLASS                                                                 */
       /* -------------------------------------------------------------------------- */
       class Wall {
         constructor() {
@@ -748,6 +743,88 @@
       resize();
 
       /* -------------------------------------------------------------------------- */
+      /* AUDIO & MIC MANAGEMENT (NEW)                                              */
+      /* -------------------------------------------------------------------------- */
+      function stopAudioInput() {
+        if (currentStream) {
+          currentStream.getTracks().forEach((track) => track.stop());
+          currentStream = null;
+        }
+        isAudioInitialized = false;
+        document.getElementById("debugStatus").innerText = "Mic Off";
+
+        // Clear Visuals
+        const bars = [
+          document.getElementById("micVolumeBar"),
+          document.getElementById("settingMicBar"),
+        ];
+        bars.forEach((b) => {
+          if (b) b.style.width = "0%";
+        });
+      }
+
+      async function initAudio() {
+        try {
+          if (audioCtx.state === "suspended") await audioCtx.resume();
+
+          const constraints = {
+            audio: {
+              echoCancellation: config.echoCancellation,
+              autoGainControl: true,
+              noiseSuppression: config.noiseSuppression,
+            },
+          };
+
+          // Check if stream active
+          if (currentStream) return true;
+
+          const stream = await navigator.mediaDevices.getUserMedia(constraints);
+          currentStream = stream;
+
+          microphone = audioCtx.createMediaStreamSource(stream);
+          gainNode = audioCtx.createGain();
+          gainNode.gain.value = config.micBoost ? 4.0 : 1.0;
+
+          analyser = audioCtx.createAnalyser();
+          analyser.fftSize = 2048;
+          dataArray = new Float32Array(analyser.fftSize);
+
+          microphone.connect(gainNode);
+          gainNode.connect(analyser);
+
+          isAudioInitialized = true;
+          document.getElementById("debugStatus").innerText = "Active";
+          return true;
+        } catch (err) {
+          console.error(err);
+          return false;
+        }
+      }
+
+      // Smart Mic Logic
+      async function manageMicState() {
+        const settingsOpen = !document
+          .getElementById("settingsModal")
+          .classList.contains("hidden");
+        // Mic should be active if: Game is running OR Tuning OR Settings are open
+        const shouldBeOn = state.running || isTuning || settingsOpen;
+
+        if (shouldBeOn) {
+          if (!isAudioInitialized) await initAudio();
+        } else {
+          if (isAudioInitialized) stopAudioInput();
+        }
+      }
+
+      function restartAudio() {
+        // Only restart if currently active
+        if (isAudioInitialized) {
+          stopAudioInput();
+          manageMicState();
+        }
+      }
+
+      /* -------------------------------------------------------------------------- */
       /* UI CONTROLLERS                                                             */
       /* -------------------------------------------------------------------------- */
       const modal = document.getElementById("settingsModal");
@@ -762,21 +839,26 @@
       const echoCheck = document.getElementById("echoCheck");
       const practiceBtn = document.getElementById("practiceBtn");
 
-      document
-        .getElementById("settingsBtn")
-        .addEventListener("click", () => modal.classList.remove("hidden"));
-      document
-        .getElementById("closeSettings")
-        .addEventListener("click", () => modal.classList.add("hidden"));
-      document
-        .getElementById("saveSettings")
-        .addEventListener("click", () => modal.classList.add("hidden"));
+      document.getElementById("settingsBtn").addEventListener("click", () => {
+        modal.classList.remove("hidden");
+        manageMicState(); // Wake up mic for settings
+      });
+
+      document.getElementById("closeSettings").addEventListener("click", () => {
+        modal.classList.add("hidden");
+        manageMicState(); // Check if mic should sleep
+      });
+
+      document.getElementById("saveSettings").addEventListener("click", () => {
+        modal.classList.add("hidden");
+        manageMicState();
+      });
 
       sensSlider.addEventListener("input", (e) => {
         config.sensitivity = parseInt(e.target.value);
         document.getElementById("sensVal").innerText = config.sensitivity;
         const marker = document.getElementById("thresholdMarker");
-        if (marker) marker.style.left = config.sensitivity * 2 + "%"; // Scale 50 -> 100%
+        if (marker) marker.style.left = config.sensitivity * 2 + "%";
         const setMarker = document.getElementById("settingThresholdMarker");
         if (setMarker) setMarker.style.left = config.sensitivity * 2 + "%";
       });
@@ -813,17 +895,6 @@
         if (gainNode) gainNode.gain.value = config.micBoost ? 4.0 : 1.0;
       });
 
-      // Audio Constraint Toggles (Requires Restart)
-      function restartAudio() {
-        if (isAudioInitialized) {
-          if (currentStream)
-            currentStream.getTracks().forEach((track) => track.stop());
-          initAudio().then((success) => {
-            if (!success) console.log("Failed to restart audio");
-          });
-        }
-      }
-
       noiseCheck.addEventListener("change", (e) => {
         config.noiseSuppression = e.target.checked;
         restartAudio();
@@ -854,44 +925,6 @@
           practiceTargetLane = -1;
         }
       });
-
-      /* -------------------------------------------------------------------------- */
-      /* AUDIO SYSTEM                                                               */
-      /* -------------------------------------------------------------------------- */
-      async function initAudio() {
-        try {
-          if (audioCtx.state === "suspended") await audioCtx.resume();
-
-          const constraints = {
-            audio: {
-              echoCancellation: config.echoCancellation,
-              autoGainControl: true,
-              noiseSuppression: config.noiseSuppression,
-            },
-          };
-
-          const stream = await navigator.mediaDevices.getUserMedia(constraints);
-          currentStream = stream;
-
-          microphone = audioCtx.createMediaStreamSource(stream);
-          gainNode = audioCtx.createGain();
-          gainNode.gain.value = config.micBoost ? 4.0 : 1.0;
-
-          analyser = audioCtx.createAnalyser();
-          analyser.fftSize = 2048;
-          dataArray = new Float32Array(analyser.fftSize);
-
-          microphone.connect(gainNode);
-          gainNode.connect(analyser);
-
-          isAudioInitialized = true;
-          document.getElementById("debugStatus").innerText = "Active";
-          return true;
-        } catch (err) {
-          console.error(err);
-          return false;
-        }
-      }
 
       function getPitch(buf, sampleRate) {
         let SIZE = buf.length;
@@ -970,15 +1003,11 @@
       const tuneBtn = document.getElementById("tuneBtn");
       tuneBtn.addEventListener("click", async () => {
         if (isTuning) return;
-        if (!isAudioInitialized) {
-          const success = await initAudio();
-          if (!success) {
-            document.getElementById("tuneStatus").innerText = "Mic Error";
-            return;
-          }
-        }
 
+        // Ensure Audio Active
         isTuning = true;
+        await manageMicState(); // Wake up mic
+
         tuneBtn.classList.remove("bg-gray-800");
         tuneBtn.classList.add(
           "tuning-pulse",
@@ -991,6 +1020,7 @@
         let counter = 0;
 
         const interval = setInterval(() => {
+          if (!isAudioInitialized) return; // Wait for init
           analyser.getFloatTimeDomainData(dataArray);
           let res = getPitch(dataArray, audioCtx.sampleRate);
           if (res.freq > 60 && res.confidence > 0.5) samples.push(res.freq);
@@ -1035,6 +1065,7 @@
           setTimeout(() => {
             tuneBtn.classList.remove("bg-green-600", "border-green-400");
             tuneBtn.classList.add("bg-gray-800");
+            manageMicState(); // Check if we should sleep mic
           }, 1500);
         } else {
           document.getElementById("tuneStatus").innerText = "Fail";
@@ -1043,6 +1074,7 @@
             tuneBtn.classList.remove("bg-red-600");
             tuneBtn.classList.add("bg-gray-800");
             document.getElementById("tuneStatus").innerText = "Retry";
+            manageMicState(); // Check if we should sleep mic
           }, 1500);
         }
       }
@@ -1179,65 +1211,7 @@
       let stableNote = 3;
       let stabilityCounter = 0;
 
-      function update(dt) {
-        if (!isAudioInitialized) return;
-
-        let isSingingFrame = false;
-
-        if (!state.ignoreInput) {
-          analyser.getFloatTimeDomainData(dataArray);
-          let result = getPitch(dataArray, audioCtx.sampleRate);
-
-          if (document.getElementById("hzDisplay"))
-            document.getElementById("hzDisplay").innerText = Math.round(
-              result.freq > 0 ? result.freq : 0
-            );
-
-          let newDetectedNote = -1;
-
-          if (result.freq > 0) {
-            let idx = freqToNoteIndex(result.freq);
-
-            if (idx !== -1) {
-              isSingingFrame = true;
-              newDetectedNote = idx;
-
-              const count = getLaneCount();
-              let rawVisualRow = count - 1 - idx;
-              let rawTargetPx =
-                rawVisualRow * state.laneHeight + state.laneHeight / 2;
-              state.rawPlayerY += (rawTargetPx - state.rawPlayerY) * 15 * dt;
-            }
-          }
-
-          if (newDetectedNote !== -1) {
-            if (newDetectedNote === stableNote) {
-              stabilityCounter++;
-            } else {
-              stabilityCounter = 0;
-              stableNote = newDetectedNote;
-            }
-            if (stabilityCounter >= config.smoothingBuffer) {
-              state.currentNoteIdx = stableNote;
-              const noteEl = document.getElementById("noteDisplay");
-              const labels = getLabels();
-              const colors = getColors();
-              noteEl.innerText = labels[state.currentNoteIdx];
-              noteEl.style.color = colors[state.currentNoteIdx % colors.length];
-            }
-          }
-        }
-
-        if (isSingingFrame) {
-          state.isSinging = true;
-          state.silenceTimer = 0;
-        } else {
-          state.silenceTimer += dt;
-          if (state.silenceTimer > 0.15) {
-            state.isSinging = false;
-          }
-        }
-
+      function updatePhysics(dt) {
         const count = getLaneCount();
         let visualRow = count - 1 - state.currentNoteIdx;
         let targetPx = visualRow * state.laneHeight + state.laneHeight / 2;
@@ -1283,6 +1257,68 @@
           });
         } else {
           state.walls = [];
+        }
+      }
+
+      function processAudio() {
+        // Silence check with grace period
+        let isSingingFrame = false;
+
+        if (!state.ignoreInput) {
+          analyser.getFloatTimeDomainData(dataArray);
+          let result = getPitch(dataArray, audioCtx.sampleRate);
+
+          if (document.getElementById("hzDisplay"))
+            document.getElementById("hzDisplay").innerText = Math.round(
+              result.freq > 0 ? result.freq : 0
+            );
+
+          let newDetectedNote = -1;
+
+          if (result.freq > 0) {
+            let idx = freqToNoteIndex(result.freq);
+            if (idx !== -1) {
+              isSingingFrame = true; // Audio detected
+              newDetectedNote = idx;
+
+              const count = getLaneCount();
+              let rawVisualRow = count - 1 - idx;
+              let rawTargetPx =
+                rawVisualRow * state.laneHeight + state.laneHeight / 2;
+              // Rough tracking for ghost
+              state.rawPlayerY += (rawTargetPx - state.rawPlayerY) * 0.5;
+            }
+          }
+
+          if (newDetectedNote !== -1) {
+            if (newDetectedNote === stableNote) {
+              stabilityCounter++;
+            } else {
+              stabilityCounter = 0;
+              stableNote = newDetectedNote;
+            }
+            if (stabilityCounter >= config.smoothingBuffer) {
+              state.currentNoteIdx = stableNote;
+              const noteEl = document.getElementById("noteDisplay");
+              const labels = getLabels();
+              const colors = getColors();
+              noteEl.innerText = labels[state.currentNoteIdx];
+              noteEl.style.color = colors[state.currentNoteIdx % colors.length];
+            }
+          }
+        }
+
+        // Grace period logic (Update state.isSinging)
+        if (isSingingFrame) {
+          state.isSinging = true;
+          state.silenceTimer = 0;
+        } else {
+          // We need DT here ideally, but for audio loop, exact timing is less critical than game loop
+          // Just approximate frame time 16ms
+          state.silenceTimer += 0.016;
+          if (state.silenceTimer > 0.15) {
+            state.isSinging = false;
+          }
         }
       }
 
@@ -1404,35 +1440,43 @@
       }
 
       function loop(ts) {
-        if (!state.running) return;
+        // ALWAYS LOOP to update Audio Visuals
         let dt = (ts - state.lastTime) / 1000;
         if (dt > 0.1) dt = 0.1;
         state.lastTime = ts;
-        update(dt);
+
+        // Always process audio if initialized (updates bars)
+        if (isAudioInitialized) {
+          processAudio();
+        }
+
+        // Only update Game Physics if running
+        if (state.running) {
+          updatePhysics(dt);
+        }
+
         draw();
         requestAnimationFrame(loop);
       }
 
       function start() {
-        initAudio().then((ok) => {
-          if (ok) {
-            document.getElementById("gameOverlay").classList.add("hidden");
-            state.score = 0;
-            state.walls = [];
-            state.speed = config.gameSpeed;
-            state.running = true;
-            state.lastTime = performance.now();
-            document.getElementById("scoreDisplay").innerText = "0";
-            state.currentNoteIdx = config.chromaticMode ? 6 : 3;
-            resize();
-            state.playerVel = 0;
-            requestAnimationFrame(loop);
-          }
-        });
+        state.running = true;
+        state.lastTime = performance.now();
+        manageMicState(); // Wake up mic for game
+
+        document.getElementById("gameOverlay").classList.add("hidden");
+        state.score = 0;
+        state.walls = [];
+        state.speed = config.gameSpeed;
+        document.getElementById("scoreDisplay").innerText = "0";
+        state.currentNoteIdx = config.chromaticMode ? 6 : 3;
+        resize();
+        state.playerVel = 0;
       }
 
       function gameOver() {
         state.running = false;
+        manageMicState(); // Sleep mic if settings closed
         const ol = document.getElementById("gameOverlay");
         ol.classList.remove("hidden");
         ol.querySelector("h1").innerText = "Hit!";
@@ -1440,6 +1484,9 @@
       }
 
       document.getElementById("startBtn").addEventListener("click", start);
+
+      // Kick off loop immediately
+      requestAnimationFrame(loop);
     </script>
   </body>
 </html>
