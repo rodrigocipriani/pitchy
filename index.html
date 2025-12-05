@@ -43,7 +43,7 @@
       input[type="range"] {
         -webkit-appearance: none;
         background: transparent;
-        z-index: 10;
+        z-index: 20; /* Above visual bars */
         position: relative;
       }
       input[type="range"]::-webkit-slider-thumb {
@@ -61,8 +61,13 @@
         width: 100%;
         height: 4px;
         cursor: pointer;
-        background: rgba(255, 255, 255, 0.1);
+        background: transparent; /* Transparent so bar behind shows */
         border-radius: 2px;
+      }
+
+      /* Specific track style for non-visual sliders */
+      .simple-range::-webkit-slider-runnable-track {
+        background: #374151;
       }
 
       /* Toggles */
@@ -255,16 +260,20 @@
                 >10</span
               >
             </div>
-            <div class="relative h-6 flex items-center">
-              <!-- Background Volume Meter -->
+            <div
+              class="relative h-6 flex items-center bg-gray-800 rounded-full border border-gray-600 overflow-hidden"
+            >
+              <!-- Background Volume Meter (Settings) -->
               <div
-                class="absolute inset-0 h-1 bg-gray-700 rounded-full overflow-hidden top-2.5"
-              >
-                <div
-                  id="settingMicBar"
-                  class="h-full bg-green-500 transition-all duration-75 w-0 opacity-50"
-                ></div>
-              </div>
+                id="settingMicBar"
+                class="absolute top-0 bottom-0 left-0 bg-green-500 transition-all duration-75 w-0 opacity-50"
+              ></div>
+              <!-- Threshold Line -->
+              <div
+                id="settingThresholdMarker"
+                class="absolute top-0 bottom-0 w-0.5 bg-yellow-400 z-10"
+                style="left: 20%"
+              ></div>
               <!-- Actual Slider -->
               <input
                 type="range"
@@ -272,11 +281,20 @@
                 min="1"
                 max="50"
                 value="10"
-                class="w-full"
+                class="w-full absolute inset-0 opacity-0 cursor-pointer"
+              />
+              <!-- Visible Thumb Logic handled by CSS on input but we need custom track... simplifying: -->
+              <input
+                type="range"
+                id="sensSliderVisible"
+                min="1"
+                max="50"
+                value="10"
+                class="w-full relative z-20"
               />
             </div>
-            <p class="text-[9px] text-gray-500 mt-0.5">
-              Adjust so blue dot is above green bar when silent.
+            <p class="text-[9px] text-gray-500 mt-1">
+              Blue dot must be above green bar.
             </p>
           </div>
 
@@ -373,13 +391,15 @@
               min="1"
               max="15"
               value="4"
-              class="w-full"
+              class="w-full simple-range"
             />
           </div>
 
           <div class="mb-4">
             <div class="flex justify-between mb-2">
-              <label class="text-xs text-gray-300 font-bold">Ball Speed</label>
+              <label class="text-xs text-gray-300 font-bold"
+                >Ball Responsiveness</label
+              >
               <span class="text-xs font-mono text-blue-400" id="physVal"
                 >12</span
               >
@@ -390,7 +410,24 @@
               min="5"
               max="30"
               value="12"
-              class="w-full"
+              class="w-full simple-range"
+            />
+          </div>
+
+          <div class="mb-4">
+            <div class="flex justify-between mb-2">
+              <label class="text-xs text-gray-300 font-bold">Wall Speed</label>
+              <span class="text-xs font-mono text-blue-400" id="speedVal"
+                >200</span
+              >
+            </div>
+            <input
+              type="range"
+              id="speedSlider"
+              min="100"
+              max="400"
+              value="200"
+              class="w-full simple-range"
             />
           </div>
 
@@ -714,9 +751,10 @@
       /* UI CONTROLLERS                                                             */
       /* -------------------------------------------------------------------------- */
       const modal = document.getElementById("settingsModal");
-      const sensSlider = document.getElementById("sensSlider");
+      const sensSlider = document.getElementById("sensSliderVisible");
       const smoothSlider = document.getElementById("smoothSlider");
       const physSlider = document.getElementById("physSlider");
+      const speedSlider = document.getElementById("speedSlider");
       const statsCheck = document.getElementById("showStatsCheck");
       const chromaticCheck = document.getElementById("chromaticCheck");
       const boostCheck = document.getElementById("boostCheck");
@@ -738,7 +776,9 @@
         config.sensitivity = parseInt(e.target.value);
         document.getElementById("sensVal").innerText = config.sensitivity;
         const marker = document.getElementById("thresholdMarker");
-        if (marker) marker.style.left = config.sensitivity + "%";
+        if (marker) marker.style.left = config.sensitivity * 2 + "%"; // Scale 50 -> 100%
+        const setMarker = document.getElementById("settingThresholdMarker");
+        if (setMarker) setMarker.style.left = config.sensitivity * 2 + "%";
       });
 
       smoothSlider.addEventListener("input", (e) => {
@@ -749,6 +789,11 @@
       physSlider.addEventListener("input", (e) => {
         config.ballPhysicsSpeed = parseInt(e.target.value);
         document.getElementById("physVal").innerText = config.ballPhysicsSpeed;
+      });
+
+      speedSlider.addEventListener("input", (e) => {
+        config.gameSpeed = parseInt(e.target.value);
+        document.getElementById("speedVal").innerText = config.gameSpeed;
       });
 
       statsCheck.addEventListener("change", (e) => {
