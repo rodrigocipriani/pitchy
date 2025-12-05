@@ -43,6 +43,8 @@
       input[type="range"] {
         -webkit-appearance: none;
         background: transparent;
+        z-index: 10;
+        position: relative;
       }
       input[type="range"]::-webkit-slider-thumb {
         -webkit-appearance: none;
@@ -59,8 +61,17 @@
         width: 100%;
         height: 4px;
         cursor: pointer;
-        background: #1f2937;
+        background: rgba(255, 255, 255, 0.1);
         border-radius: 2px;
+      }
+
+      /* Toggles */
+      .toggle-checkbox:checked {
+        right: 0;
+        border-color: #68d391;
+      }
+      .toggle-checkbox:checked + .toggle-label {
+        background-color: #68d391;
       }
 
       .tuning-pulse {
@@ -133,7 +144,7 @@
       <div class="flex items-center gap-4">
         <button
           id="settingsBtn"
-          class="p-2 text-gray-400 hover:text-white transition bg-gray-800 rounded-full hover:bg-gray-700"
+          class="p-2 text-gray-400 hover:text-white transition bg-gray-800 rounded-full hover:bg-gray-700 relative"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -226,90 +237,177 @@
           </button>
         </div>
 
-        <div class="mb-5 group">
-          <div class="flex justify-between mb-2">
-            <label
-              class="text-xs text-gray-300 font-bold uppercase tracking-wide"
-              >Mic Sensitivity</label
-            >
-            <span
-              class="text-xs font-mono text-blue-400 bg-blue-900/30 px-1.5 rounded"
-              id="sensVal"
-              >10</span
-            >
-          </div>
-          <input
-            type="range"
-            id="sensSlider"
-            min="1"
-            max="50"
-            value="10"
-            class="w-full"
-          />
-        </div>
-
-        <div class="mb-5 group">
-          <div class="flex justify-between mb-2">
-            <label
-              class="text-xs text-gray-300 font-bold uppercase tracking-wide"
-              >Note Stability</label
-            >
-            <span
-              class="text-xs font-mono text-blue-400 bg-blue-900/30 px-1.5 rounded"
-              id="smoothVal"
-              >4</span
-            >
-          </div>
-          <input
-            type="range"
-            id="smoothSlider"
-            min="1"
-            max="15"
-            value="4"
-            class="w-full"
-          />
-        </div>
-
-        <div class="mb-5 group">
-          <div class="flex justify-between mb-2">
-            <label
-              class="text-xs text-gray-300 font-bold uppercase tracking-wide"
-              >Ball Speed</label
-            >
-            <span
-              class="text-xs font-mono text-blue-400 bg-blue-900/30 px-1.5 rounded"
-              id="physVal"
-              >12</span
-            >
-          </div>
-          <input
-            type="range"
-            id="physSlider"
-            min="5"
-            max="30"
-            value="12"
-            class="w-full"
-          />
-        </div>
-
-        <!-- Chromatic Toggle -->
-        <div class="mb-5 border-t border-gray-700 pt-4">
-          <label
-            class="text-xs text-gray-300 flex items-center justify-between cursor-pointer group"
+        <!-- Mic Settings Group -->
+        <div class="mb-6">
+          <p
+            class="text-[10px] font-bold text-gray-500 uppercase mb-3 tracking-wider"
           >
-            <span
-              class="font-bold uppercase tracking-wide group-hover:text-white"
-              >Enable Black Notes</span
-            >
-            <input
-              type="checkbox"
-              id="chromaticCheck"
-              class="rounded bg-gray-700 border-gray-600 text-blue-500 w-4 h-4"
-            />
-          </label>
-          <p class="text-[10px] text-gray-500 mt-1">
-            Shows sharps/flats (13 lanes)
+            Microphone
           </p>
+
+          <!-- Sensitivity with Visual Feedback -->
+          <div class="mb-4">
+            <div class="flex justify-between mb-1">
+              <label class="text-xs text-gray-300 font-bold"
+                >Sensitivity Threshold</label
+              >
+              <span class="text-xs font-mono text-blue-400" id="sensVal"
+                >10</span
+              >
+            </div>
+            <div class="relative h-6 flex items-center">
+              <!-- Background Volume Meter -->
+              <div
+                class="absolute inset-0 h-1 bg-gray-700 rounded-full overflow-hidden top-2.5"
+              >
+                <div
+                  id="settingMicBar"
+                  class="h-full bg-green-500 transition-all duration-75 w-0 opacity-50"
+                ></div>
+              </div>
+              <!-- Actual Slider -->
+              <input
+                type="range"
+                id="sensSlider"
+                min="1"
+                max="50"
+                value="10"
+                class="w-full"
+              />
+            </div>
+            <p class="text-[9px] text-gray-500 mt-0.5">
+              Adjust so blue dot is above green bar when silent.
+            </p>
+          </div>
+
+          <!-- Toggles Grid -->
+          <div class="grid grid-cols-2 gap-3">
+            <!-- Boost -->
+            <div
+              class="flex items-center justify-between bg-gray-800/50 p-2 rounded-lg border border-gray-700"
+            >
+              <span class="text-xs text-gray-300">Mic Boost</span>
+              <div
+                class="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in"
+              >
+                <input
+                  type="checkbox"
+                  name="toggle"
+                  id="boostCheck"
+                  class="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer checked:right-0 checked:border-blue-500 right-5 transition-all duration-200"
+                  checked
+                />
+                <label
+                  for="boostCheck"
+                  class="toggle-label block overflow-hidden h-5 rounded-full bg-gray-600 cursor-pointer"
+                ></label>
+              </div>
+            </div>
+
+            <!-- Noise Suppression -->
+            <div
+              class="flex items-center justify-between bg-gray-800/50 p-2 rounded-lg border border-gray-700"
+            >
+              <span class="text-xs text-gray-300">Noise Filter</span>
+              <div
+                class="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in"
+              >
+                <input
+                  type="checkbox"
+                  name="toggle"
+                  id="noiseCheck"
+                  class="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer checked:right-0 checked:border-blue-500 right-5 transition-all duration-200"
+                  checked
+                />
+                <label
+                  for="noiseCheck"
+                  class="toggle-label block overflow-hidden h-5 rounded-full bg-gray-600 cursor-pointer"
+                ></label>
+              </div>
+            </div>
+
+            <!-- Echo Cancellation -->
+            <div
+              class="flex items-center justify-between bg-gray-800/50 p-2 rounded-lg border border-gray-700 col-span-2"
+            >
+              <span class="text-xs text-gray-300">Echo Cancellation</span>
+              <div
+                class="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in"
+              >
+                <input
+                  type="checkbox"
+                  name="toggle"
+                  id="echoCheck"
+                  class="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer checked:right-0 checked:border-blue-500 right-5 transition-all duration-200"
+                  checked
+                />
+                <label
+                  for="echoCheck"
+                  class="toggle-label block overflow-hidden h-5 rounded-full bg-gray-600 cursor-pointer"
+                ></label>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Game Settings Group -->
+        <div class="mb-4">
+          <p
+            class="text-[10px] font-bold text-gray-500 uppercase mb-3 tracking-wider"
+          >
+            Gameplay
+          </p>
+
+          <div class="mb-4">
+            <div class="flex justify-between mb-2">
+              <label class="text-xs text-gray-300 font-bold"
+                >Input Smoothing</label
+              >
+              <span class="text-xs font-mono text-blue-400" id="smoothVal"
+                >4</span
+              >
+            </div>
+            <input
+              type="range"
+              id="smoothSlider"
+              min="1"
+              max="15"
+              value="4"
+              class="w-full"
+            />
+          </div>
+
+          <div class="mb-4">
+            <div class="flex justify-between mb-2">
+              <label class="text-xs text-gray-300 font-bold">Ball Speed</label>
+              <span class="text-xs font-mono text-blue-400" id="physVal"
+                >12</span
+              >
+            </div>
+            <input
+              type="range"
+              id="physSlider"
+              min="5"
+              max="30"
+              value="12"
+              class="w-full"
+            />
+          </div>
+
+          <div class="border-t border-gray-700 pt-3">
+            <label
+              class="text-xs text-gray-300 flex items-center justify-between cursor-pointer group"
+            >
+              <span class="font-bold group-hover:text-white"
+                >Enable Black Notes</span
+              >
+              <input
+                type="checkbox"
+                id="chromaticCheck"
+                class="rounded bg-gray-700 border-gray-600 text-blue-500 w-4 h-4"
+              />
+            </label>
+          </div>
         </div>
 
         <div
@@ -425,10 +523,50 @@
       const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
       let analyser, microphone, dataArray, gainNode;
       let isAudioInitialized = false;
+      let currentStream = null;
 
+      const noteLabels = ["Do", "Re", "Mi", "Fa", "Sol", "La", "Si", "Do"];
+      const laneColors = [
+        "#1f2937",
+        "#111827",
+        "#1f2937",
+        "#111827",
+        "#1f2937",
+        "#111827",
+        "#1f2937",
+        "#111827",
+      ];
+      const noteColors = [
+        "hsl(0, 80%, 60%)",
+        "hsl(30, 80%, 60%)",
+        "hsl(60, 80%, 50%)",
+        "hsl(120, 70%, 50%)",
+        "hsl(180, 70%, 50%)",
+        "hsl(240, 70%, 60%)",
+        "hsl(280, 70%, 60%)",
+        "hsl(0, 80%, 60%)",
+      ];
+
+      let baseMIDINote = 48; // C3
+      let isTuning = false;
+
+      let config = {
+        sensitivity: 10,
+        smoothingBuffer: 4,
+        ballPhysicsSpeed: 12,
+        gameSpeed: 200,
+        chromaticMode: false,
+        micBoost: true,
+        noiseSuppression: true,
+        echoCancellation: true,
+      };
+
+      // Helper getters
+      function getLaneCount() {
+        return config.chromaticMode ? 13 : 8;
+      }
       // NOTE CONFIGURATION
       const DIATONIC_LABELS = ["Do", "Re", "Mi", "Fa", "Sol", "La", "Si", "Do"];
-      // 0=Do(C), 1=Do#, 2=Re(D), 3=Re#, 4=Mi(E), 5=Fa(F), 6=Fa#, 7=Sol(G), 8=Sol#, 9=La(A), 10=La#, 11=Si(B), 12=Do
       const CHROMATIC_LABELS = [
         "Do",
         "Do#",
@@ -444,60 +582,40 @@
         "Si",
         "Do",
       ];
-
-      // Colors for Chromatic (13 steps)
-      const CHROMATIC_COLORS = [
-        "hsl(0, 80%, 60%)", // C  Red
-        "hsl(15, 80%, 60%)", // C#
-        "hsl(30, 80%, 60%)", // D  Orange
-        "hsl(45, 80%, 60%)", // D#
-        "hsl(60, 80%, 50%)", // E  Yellow
-        "hsl(120, 70%, 50%)", // F  Green
-        "hsl(150, 70%, 50%)", // F#
-        "hsl(180, 70%, 50%)", // G  Cyan
-        "hsl(210, 70%, 60%)", // G#
-        "hsl(240, 70%, 60%)", // A  Blue
-        "hsl(260, 70%, 60%)", // A#
-        "hsl(280, 70%, 60%)", // B  Purple
-        "hsl(0, 80%, 60%)", // C  Red (High)
-      ];
-
-      // Colors for Diatonic (8 steps)
-      const DIATONIC_COLORS = [
-        "hsl(0, 80%, 60%)", // Do
-        "hsl(30, 80%, 60%)", // Re
-        "hsl(60, 80%, 50%)", // Mi
-        "hsl(120, 70%, 50%)", // Fa
-        "hsl(180, 70%, 50%)", // Sol
-        "hsl(240, 70%, 60%)", // La
-        "hsl(280, 70%, 60%)", // Si
-        "hsl(0, 80%, 60%)", // Do
-      ];
-
-      let baseMIDINote = 48; // C3
-      let isTuning = false;
-
-      let config = {
-        sensitivity: 10,
-        smoothingBuffer: 4,
-        ballPhysicsSpeed: 12,
-        gameSpeed: 200,
-        chromaticMode: false, // New Setting
-      };
-
-      // Helper getters
-      function getLaneCount() {
-        return config.chromaticMode ? 13 : 8;
-      }
       function getLabels() {
         return config.chromaticMode ? CHROMATIC_LABELS : DIATONIC_LABELS;
       }
+      const CHROMATIC_COLORS = [
+        "hsl(0, 80%, 60%)",
+        "hsl(15, 80%, 60%)",
+        "hsl(30, 80%, 60%)",
+        "hsl(45, 80%, 60%)",
+        "hsl(60, 80%, 50%)",
+        "hsl(120, 70%, 50%)",
+        "hsl(150, 70%, 50%)",
+        "hsl(180, 70%, 50%)",
+        "hsl(210, 70%, 60%)",
+        "hsl(240, 70%, 60%)",
+        "hsl(260, 70%, 60%)",
+        "hsl(280, 70%, 60%)",
+        "hsl(0, 80%, 60%)",
+      ];
+      const DIATONIC_COLORS = [
+        "hsl(0, 80%, 60%)",
+        "hsl(30, 80%, 60%)",
+        "hsl(60, 80%, 50%)",
+        "hsl(120, 70%, 50%)",
+        "hsl(180, 70%, 50%)",
+        "hsl(240, 70%, 60%)",
+        "hsl(280, 70%, 60%)",
+        "hsl(0, 80%, 60%)",
+      ];
       function getColors() {
         return config.chromaticMode ? CHROMATIC_COLORS : DIATONIC_COLORS;
       }
 
       /* -------------------------------------------------------------------------- */
-      /* GAME ENGINE (Canvas, State, Resize)                                        */
+      /* GAME ENGINE PREP                                                           */
       /* -------------------------------------------------------------------------- */
       const canvas = document.getElementById("gameCanvas");
       const ctx = canvas.getContext("2d");
@@ -518,25 +636,13 @@
         silenceTimer: 0,
       };
 
-      function resize() {
-        canvas.width = canvas.parentElement.clientWidth;
-        canvas.height = canvas.parentElement.clientHeight;
-        state.laneHeight = canvas.height / getLaneCount();
-        if (!state.running) {
-          state.playerY = canvas.height / 2;
-          state.rawPlayerY = state.playerY;
-        }
-      }
-      window.addEventListener("resize", resize);
-
       /* -------------------------------------------------------------------------- */
-      /* WALL CLASS (DEFINED EARLY)                                                 */
+      /* WALL CLASS (DEFINED BEFORE USE)                                            */
       /* -------------------------------------------------------------------------- */
       class Wall {
         constructor() {
           this.x = canvas.width;
           this.w = 80;
-          // Correctly use dynamic lane count
           this.holeIdx = Math.floor(Math.random() * getLaneCount());
           this.passed = false;
         }
@@ -584,7 +690,17 @@
         }
       }
 
-      // Init resize
+      function resize() {
+        canvas.width = canvas.parentElement.clientWidth;
+        canvas.height = canvas.parentElement.clientHeight;
+        state.laneHeight = canvas.height / getLaneCount();
+        if (!state.running) {
+          state.playerY = canvas.height / 2;
+          state.rawPlayerY = state.playerY;
+        }
+      }
+      window.addEventListener("resize", resize);
+      // Initialize canvas size immediately
       resize();
 
       /* -------------------------------------------------------------------------- */
@@ -596,6 +712,9 @@
       const physSlider = document.getElementById("physSlider");
       const statsCheck = document.getElementById("showStatsCheck");
       const chromaticCheck = document.getElementById("chromaticCheck");
+      const boostCheck = document.getElementById("boostCheck");
+      const noiseCheck = document.getElementById("noiseCheck");
+      const echoCheck = document.getElementById("echoCheck");
       const practiceBtn = document.getElementById("practiceBtn");
 
       document
@@ -637,6 +756,32 @@
         state.walls = [];
       });
 
+      boostCheck.addEventListener("change", (e) => {
+        config.micBoost = e.target.checked;
+        if (gainNode) gainNode.gain.value = config.micBoost ? 4.0 : 1.0;
+      });
+
+      // Audio Constraint Toggles (Requires Restart)
+      function restartAudio() {
+        if (isAudioInitialized) {
+          if (currentStream)
+            currentStream.getTracks().forEach((track) => track.stop());
+          initAudio().then((success) => {
+            if (!success) console.log("Failed to restart audio");
+          });
+        }
+      }
+
+      noiseCheck.addEventListener("change", (e) => {
+        config.noiseSuppression = e.target.checked;
+        restartAudio();
+      });
+
+      echoCheck.addEventListener("change", (e) => {
+        config.echoCancellation = e.target.checked;
+        restartAudio();
+      });
+
       let practiceMode = false;
       let practiceTargetLane = -1;
 
@@ -664,17 +809,21 @@
       async function initAudio() {
         try {
           if (audioCtx.state === "suspended") await audioCtx.resume();
-          const stream = await navigator.mediaDevices.getUserMedia({
+
+          const constraints = {
             audio: {
-              echoCancellation: true,
+              echoCancellation: config.echoCancellation,
               autoGainControl: true,
-              noiseSuppression: true,
+              noiseSuppression: config.noiseSuppression,
             },
-          });
+          };
+
+          const stream = await navigator.mediaDevices.getUserMedia(constraints);
+          currentStream = stream;
 
           microphone = audioCtx.createMediaStreamSource(stream);
           gainNode = audioCtx.createGain();
-          gainNode.gain.value = 4.0;
+          gainNode.gain.value = config.micBoost ? 4.0 : 1.0;
 
           analyser = audioCtx.createAnalyser();
           analyser.fftSize = 2048;
@@ -687,6 +836,7 @@
           document.getElementById("debugStatus").innerText = "Active";
           return true;
         } catch (err) {
+          console.error(err);
           return false;
         }
       }
@@ -697,27 +847,32 @@
         for (let i = 0; i < SIZE; i++) rms += buf[i] * buf[i];
         rms = Math.sqrt(rms / SIZE);
 
+        // Visuals for Main Bar AND Settings Bar
         const volPct = Math.min(100, rms * 2000);
-        document.getElementById("micVolumeBar").style.width = `${volPct}%`;
+        const mainBar = document.getElementById("micVolumeBar");
+        const settingBar = document.getElementById("settingMicBar");
+
+        if (mainBar) mainBar.style.width = `${volPct}%`;
+        if (settingBar) settingBar.style.width = `${volPct}%`;
+
         const dRMS = document.getElementById("debugRMS");
         if (dRMS) dRMS.innerText = rms.toFixed(4);
 
         const threshold = config.sensitivity / 1000;
-        const volBar = document.getElementById("micVolumeBar");
 
         if (state.ignoreInput) {
-          volBar.classList.replace("bg-green-500", "bg-gray-600");
+          if (mainBar) mainBar.classList.replace("bg-green-500", "bg-gray-600");
           return { freq: -1, confidence: 0 };
         }
 
         if (rms < threshold) {
-          volBar.classList.replace("bg-green-500", "bg-gray-600");
+          if (mainBar) mainBar.classList.replace("bg-green-500", "bg-gray-600");
           const dStat = document.getElementById("debugStatus");
           if (dStat) dStat.innerText = "Silence";
           return { freq: -1, confidence: 0 };
         }
 
-        volBar.classList.replace("bg-gray-600", "bg-green-500");
+        if (mainBar) mainBar.classList.replace("bg-gray-600", "bg-green-500");
         const dStat = document.getElementById("debugStatus");
         if (dStat) dStat.innerText = "Listening";
 
@@ -913,8 +1068,10 @@
         if (toneTimeout) clearTimeout(toneTimeout);
 
         const volBar = document.getElementById("micVolumeBar");
-        volBar.classList.add("bg-gray-500");
-        volBar.classList.remove("bg-green-500");
+        if (volBar) {
+          volBar.classList.add("bg-gray-500");
+          volBar.classList.remove("bg-green-500");
+        }
 
         // Lane Index to MIDI Semitone
         const count = getLaneCount();
@@ -959,8 +1116,10 @@
 
         toneTimeout = setTimeout(() => {
           state.ignoreInput = false;
-          volBar.classList.remove("bg-gray-500");
-          volBar.classList.add("bg-green-500");
+          if (volBar) {
+            volBar.classList.remove("bg-gray-500");
+            volBar.classList.add("bg-green-500");
+          }
         }, 800);
       }
 
