@@ -226,7 +226,9 @@
       id="settingsModal"
       class="absolute inset-0 z-50 bg-black/60 hidden flex items-center justify-center backdrop-blur-sm transition-opacity"
     >
-      <div class="glass-panel p-6 rounded-2xl w-80 border-t border-gray-600">
+      <div
+        class="glass-panel p-6 rounded-2xl w-80 border-t border-gray-600 shadow-2xl"
+      >
         <div class="flex justify-between items-center mb-6">
           <h2 class="text-xl font-bold text-white tracking-tight">Settings</h2>
           <button
@@ -247,10 +249,33 @@
 
           <!-- Sensitivity with Visual Feedback -->
           <div class="mb-4">
-            <div class="flex justify-between mb-1">
-              <label class="text-xs text-gray-300 font-bold"
-                >Sensitivity Threshold</label
-              >
+            <div
+              class="flex justify-between mb-1 items-center group/tooltip relative"
+            >
+              <div class="flex items-center gap-1">
+                <label class="text-xs text-gray-300 font-bold"
+                  >Sensitivity Threshold</label
+                >
+                <svg
+                  class="w-3 h-3 text-gray-500 cursor-help"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                  ></path>
+                </svg>
+                <div
+                  class="absolute bottom-full left-0 mb-2 w-48 p-2 bg-gray-900 border border-gray-700 rounded text-[10px] text-gray-300 hidden group-hover/tooltip:block z-50 shadow-xl"
+                >
+                  Adjusts how loud you need to sing. Keep the yellow line
+                  slightly above the green bar (background noise).
+                </div>
+              </div>
               <span class="text-xs font-mono text-blue-400" id="sensVal"
                 >10</span
               >
@@ -258,18 +283,15 @@
             <div
               class="relative h-6 flex items-center bg-gray-800 rounded-full border border-gray-600 overflow-hidden"
             >
-              <!-- Background Volume Meter (Settings) -->
               <div
                 id="settingMicBar"
                 class="absolute top-0 bottom-0 left-0 bg-green-500 transition-all duration-75 w-0 opacity-50"
               ></div>
-              <!-- Threshold Line -->
               <div
                 id="settingThresholdMarker"
                 class="absolute top-0 bottom-0 w-0.5 bg-yellow-400 z-10"
                 style="left: 20%"
               ></div>
-              <!-- Actual Slider -->
               <input
                 type="range"
                 id="sensSlider"
@@ -278,7 +300,6 @@
                 value="10"
                 class="w-full absolute inset-0 opacity-0 cursor-pointer"
               />
-              <!-- Visible Thumb Logic handled by CSS on input but we need custom track... simplifying: -->
               <input
                 type="range"
                 id="sensSliderVisible"
@@ -288,18 +309,36 @@
                 class="w-full relative z-20"
               />
             </div>
-            <p class="text-[9px] text-gray-500 mt-1">
-              Blue dot must be above green bar.
-            </p>
           </div>
 
           <!-- Toggles Grid -->
           <div class="grid grid-cols-2 gap-3">
             <!-- Boost -->
             <div
-              class="flex items-center justify-between bg-gray-800/50 p-2 rounded-lg border border-gray-700"
+              class="flex items-center justify-between bg-gray-800/50 p-2 rounded-lg border border-gray-700 group/tooltip relative"
             >
-              <span class="text-xs text-gray-300">Mic Boost</span>
+              <div class="flex items-center gap-1">
+                <span class="text-xs text-gray-300">Mic Boost</span>
+                <svg
+                  class="w-3 h-3 text-gray-500 cursor-help"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M13 10V3L4 14h7v7l9-11h-7z"
+                  ></path>
+                </svg>
+                <div
+                  class="absolute bottom-full left-0 mb-2 w-40 p-2 bg-gray-900 border border-gray-700 rounded text-[10px] text-gray-300 hidden group-hover/tooltip:block z-50 shadow-xl"
+                >
+                  Amplifies your microphone volume by 4x. Turn off if audio is
+                  distorted.
+                </div>
+              </div>
               <div
                 class="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in"
               >
@@ -319,9 +358,29 @@
 
             <!-- Noise Suppression -->
             <div
-              class="flex items-center justify-between bg-gray-800/50 p-2 rounded-lg border border-gray-700"
+              class="flex items-center justify-between bg-gray-800/50 p-2 rounded-lg border border-gray-700 group/tooltip relative"
             >
-              <span class="text-xs text-gray-300">Noise Filter</span>
+              <div class="flex items-center gap-1">
+                <span class="text-xs text-gray-300">Noise Filter</span>
+                <svg
+                  class="w-3 h-3 text-gray-500 cursor-help"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M19.428 15.428a2 2 0 00-1.022-.547l-2.384-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"
+                  ></path>
+                </svg>
+                <div
+                  class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-40 p-2 bg-gray-900 border border-gray-700 rounded text-[10px] text-gray-300 hidden group-hover/tooltip:block z-50 shadow-xl"
+                >
+                  Reduces background noise like fans or typing.
+                </div>
+              </div>
               <div
                 class="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in"
               >
@@ -341,9 +400,30 @@
 
             <!-- Echo Cancellation -->
             <div
-              class="flex items-center justify-between bg-gray-800/50 p-2 rounded-lg border border-gray-700 col-span-2"
+              class="flex items-center justify-between bg-gray-800/50 p-2 rounded-lg border border-gray-700 col-span-2 group/tooltip relative"
             >
-              <span class="text-xs text-gray-300">Echo Cancellation</span>
+              <div class="flex items-center gap-1">
+                <span class="text-xs text-gray-300">Echo Cancellation</span>
+                <svg
+                  class="w-3 h-3 text-gray-500 cursor-help"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.536 8.464a5 5 0 000 7.072m-2.828-9.9a9 9 0 000 12.728"
+                  ></path>
+                </svg>
+                <div
+                  class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-40 p-2 bg-gray-900 border border-gray-700 rounded text-[10px] text-gray-300 hidden group-hover/tooltip:block z-50 shadow-xl"
+                >
+                  Prevents speaker sound from re-entering the mic. Essential
+                  without headphones.
+                </div>
+              </div>
               <div
                 class="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in"
               >
@@ -372,10 +452,32 @@
           </p>
 
           <div class="mb-4">
-            <div class="flex justify-between mb-2">
-              <label class="text-xs text-gray-300 font-bold"
-                >Input Smoothing</label
-              >
+            <div
+              class="flex justify-between mb-2 items-center group/tooltip relative"
+            >
+              <div class="flex items-center gap-1">
+                <label class="text-xs text-gray-300 font-bold"
+                  >Input Smoothing</label
+                >
+                <svg
+                  class="w-3 h-3 text-gray-500 cursor-help"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                  ></path>
+                </svg>
+                <div
+                  class="absolute bottom-full left-0 mb-2 w-48 p-2 bg-gray-900 border border-gray-700 rounded text-[10px] text-gray-300 hidden group-hover/tooltip:block z-50 shadow-xl"
+                >
+                  Higher values remove jitter but make the ball react slower.
+                </div>
+              </div>
               <span class="text-xs font-mono text-blue-400" id="smoothVal"
                 >4</span
               >
@@ -391,10 +493,32 @@
           </div>
 
           <div class="mb-4">
-            <div class="flex justify-between mb-2">
-              <label class="text-xs text-gray-300 font-bold"
-                >Ball Responsiveness</label
-              >
+            <div
+              class="flex justify-between mb-2 items-center group/tooltip relative"
+            >
+              <div class="flex items-center gap-1">
+                <label class="text-xs text-gray-300 font-bold"
+                  >Ball Speed</label
+                >
+                <svg
+                  class="w-3 h-3 text-gray-500 cursor-help"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M13 10V3L4 14h7v7l9-11h-7z"
+                  ></path>
+                </svg>
+                <div
+                  class="absolute bottom-full left-0 mb-2 w-48 p-2 bg-gray-900 border border-gray-700 rounded text-[10px] text-gray-300 hidden group-hover/tooltip:block z-50 shadow-xl"
+                >
+                  How fast the ball slides to the new note position.
+                </div>
+              </div>
               <span class="text-xs font-mono text-blue-400" id="physVal"
                 >12</span
               >
@@ -410,8 +534,32 @@
           </div>
 
           <div class="mb-4">
-            <div class="flex justify-between mb-2">
-              <label class="text-xs text-gray-300 font-bold">Wall Speed</label>
+            <div
+              class="flex justify-between mb-2 items-center group/tooltip relative"
+            >
+              <div class="flex items-center gap-1">
+                <label class="text-xs text-gray-300 font-bold"
+                  >Wall Speed</label
+                >
+                <svg
+                  class="w-3 h-3 text-gray-500 cursor-help"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                  ></path>
+                </svg>
+                <div
+                  class="absolute bottom-full left-0 mb-2 w-48 p-2 bg-gray-900 border border-gray-700 rounded text-[10px] text-gray-300 hidden group-hover/tooltip:block z-50 shadow-xl"
+                >
+                  How fast the walls approach you.
+                </div>
+              </div>
               <span class="text-xs font-mono text-blue-400" id="speedVal"
                 >200</span
               >
@@ -428,11 +576,32 @@
 
           <div class="border-t border-gray-700 pt-3">
             <label
-              class="text-xs text-gray-300 flex items-center justify-between cursor-pointer group"
+              class="text-xs text-gray-300 flex items-center justify-between cursor-pointer group/tooltip relative"
             >
-              <span class="font-bold group-hover:text-white"
-                >Enable Black Notes</span
-              >
+              <div class="flex items-center gap-1">
+                <span class="font-bold group-hover:text-white"
+                  >Enable Black Notes</span
+                >
+                <svg
+                  class="w-3 h-3 text-gray-500 cursor-help"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"
+                  ></path>
+                </svg>
+                <div
+                  class="absolute bottom-full left-0 mb-2 w-48 p-2 bg-gray-900 border border-gray-700 rounded text-[10px] text-gray-300 hidden group-hover/tooltip:block z-50 shadow-xl"
+                >
+                  Adds sharps/flats (black keys) for advanced singers (13 lanes
+                  instead of 8).
+                </div>
+              </div>
               <input
                 type="checkbox"
                 id="chromaticCheck"
@@ -669,7 +838,7 @@
       };
 
       /* -------------------------------------------------------------------------- */
-      /* WALL CLASS                                                                 */
+      /* WALL CLASS (DEFINED BEFORE USE)                                            */
       /* -------------------------------------------------------------------------- */
       class Wall {
         constructor() {
