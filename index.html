@@ -446,7 +446,6 @@
       ];
 
       // Colors for Chromatic (13 steps)
-      // Rainbow spectrum for 12 semitones
       const CHROMATIC_COLORS = [
         "hsl(0, 80%, 60%)", // C  Red
         "hsl(15, 80%, 60%)", // C#
@@ -531,7 +530,7 @@
       window.addEventListener("resize", resize);
 
       /* -------------------------------------------------------------------------- */
-      /* WALL CLASS (MOVED HERE TO FIX REFERENCE ERROR)                             */
+      /* WALL CLASS (DEFINED EARLY)                                                 */
       /* -------------------------------------------------------------------------- */
       class Wall {
         constructor() {
@@ -934,23 +933,35 @@
 
         const osc = audioCtx.createOscillator();
         const g = audioCtx.createGain();
-        osc.type = "triangle";
+
+        // ELECTRIC PIANO SYNTH (Sine + Triangle Mix)
+        osc.type = "sine";
         osc.frequency.value = freq;
 
+        // Mix a second oscillator for harmonics
+        const osc2 = audioCtx.createOscillator();
+        osc2.type = "triangle";
+        osc2.frequency.value = freq;
+
+        // Gain Node
         g.gain.setValueAtTime(0, audioCtx.currentTime);
-        g.gain.linearRampToValueAtTime(0.5, audioCtx.currentTime + 0.05);
-        g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 1.0);
+        g.gain.linearRampToValueAtTime(0.6, audioCtx.currentTime + 0.05); // Attack
+        g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 1.2); // Decay
 
         osc.connect(g);
+        osc2.connect(g); // Connect both
         g.connect(audioCtx.destination);
+
         osc.start();
-        osc.stop(audioCtx.currentTime + 1.0);
+        osc2.start();
+        osc.stop(audioCtx.currentTime + 1.2);
+        osc2.stop(audioCtx.currentTime + 1.2);
 
         toneTimeout = setTimeout(() => {
           state.ignoreInput = false;
           volBar.classList.remove("bg-gray-500");
           volBar.classList.add("bg-green-500");
-        }, 600);
+        }, 800);
       }
 
       let noteBuffer = [];
@@ -1098,6 +1109,9 @@
           ctx.textBaseline = "middle";
           ctx.fillText(labels[musicalIdx], 20, y + state.laneHeight / 2);
 
+          // MOVED HERTZ AND PLAY BUTTON TO THE RIGHT
+          ctx.textAlign = "right"; // Align to right side of lane
+
           ctx.font = "10px monospace";
           let semitoneOffset = 0;
           if (config.chromaticMode) {
@@ -1109,11 +1123,21 @@
           const freq = Math.round(
             440 * Math.pow(2, (baseMIDINote + semitoneOffset - 69) / 12)
           );
-          ctx.fillText(`${freq}Hz`, 65, y + state.laneHeight / 2 + 12);
 
-          ctx.fillStyle = "rgba(255,255,255,0.2)";
+          // Draw Hertz on Right
+          ctx.fillText(
+            `${freq}Hz`,
+            canvas.width - 20,
+            y + state.laneHeight / 2 + 12
+          );
+
+          ctx.fillStyle = `rgba(255, 255, 255, ${textAlpha + 0.1})`;
           ctx.font = "12px Fredoka";
-          ctx.fillText("▶", 65, y + state.laneHeight / 2 - 5);
+          // Draw Play on Right
+          ctx.fillText("▶", canvas.width - 20, y + state.laneHeight / 2 - 5);
+
+          // Reset Alignment
+          ctx.textAlign = "left";
 
           if (practiceMode && i === practiceTargetLane) {
             ctx.strokeStyle = "#60a5fa";
