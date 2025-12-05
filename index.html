@@ -642,7 +642,9 @@
       class Wall {
         constructor() {
           this.x = canvas.width;
-          this.w = 80;
+          // RESPONSIVE WALL THICKNESS (8% of screen width)
+          this.w = canvas.width * 0.08;
+
           this.holeIdx = Math.floor(Math.random() * getLaneCount());
           this.passed = false;
         }
@@ -663,16 +665,21 @@
             ctx.strokeStyle = "rgba(0,0,0,0.2)";
             ctx.lineWidth = 2;
             ctx.beginPath();
-            ctx.moveTo(this.x + 20, 0);
-            ctx.lineTo(this.x + 20, holeY);
+            // Responsive Texture Lines
+            ctx.moveTo(this.x + this.w * 0.25, 0);
+            ctx.lineTo(this.x + this.w * 0.25, holeY);
+            ctx.moveTo(this.x + this.w * 0.75, 0);
+            ctx.lineTo(this.x + this.w * 0.75, holeY);
             ctx.stroke();
           }
           let bottomY = holeY + lh;
           if (bottomY < canvas.height) {
             ctx.fillRect(this.x, bottomY, this.w, canvas.height - bottomY);
             ctx.beginPath();
-            ctx.moveTo(this.x + 20, bottomY);
-            ctx.lineTo(this.x + 20, canvas.height);
+            ctx.moveTo(this.x + this.w * 0.25, bottomY);
+            ctx.lineTo(this.x + this.w * 0.25, canvas.height);
+            ctx.moveTo(this.x + this.w * 0.75, bottomY);
+            ctx.lineTo(this.x + this.w * 0.75, canvas.height);
             ctx.stroke();
           }
           ctx.strokeStyle = "#facc15";
@@ -1197,7 +1204,9 @@
           if (state.spawnTimer > 3.5) {
             state.walls.push(new Wall());
             state.spawnTimer = 0;
-            state.speed = config.gameSpeed + state.score * 5;
+            // RELATIVE SPEED CALCULATION
+            let baseSpeed = config.gameSpeed + state.score * 5;
+            state.speed = baseSpeed * (canvas.width / 1000);
           }
 
           state.walls.forEach((w, i) => {
@@ -1282,8 +1291,6 @@
           const freq = Math.round(
             440 * Math.pow(2, (baseMIDINote + semitoneOffset - 69) / 12)
           );
-
-          // Draw Hertz on Right
           ctx.fillText(
             `${freq}Hz`,
             canvas.width - 20,
