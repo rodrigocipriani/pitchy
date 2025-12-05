@@ -15,7 +15,7 @@
         font-family: "Fredoka", sans-serif;
         touch-action: none;
         overflow: hidden;
-        background-color: #111827;
+        background-color: #030712; /* Nearly black */
         height: 100dvh;
         width: 100vw;
       }
@@ -28,13 +28,13 @@
       }
 
       .overlay {
-        background: rgba(17, 24, 39, 0.95);
+        background: rgba(3, 7, 18, 0.95);
         backdrop-filter: blur(8px);
       }
 
       .glass-panel {
-        background: rgba(31, 41, 55, 0.95);
-        border: 1px solid rgba(75, 85, 99, 0.5);
+        background: rgba(17, 24, 39, 0.95);
+        border: 1px solid rgba(55, 65, 81, 0.5);
         backdrop-filter: blur(12px);
         box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
       }
@@ -59,7 +59,7 @@
         width: 100%;
         height: 4px;
         cursor: pointer;
-        background: #374151;
+        background: #1f2937;
         border-radius: 2px;
       }
 
@@ -82,7 +82,7 @@
   <body class="flex flex-col text-white">
     <!-- Top UI Bar -->
     <div
-      class="h-16 bg-gray-900 border-b border-gray-800 flex items-center justify-between px-4 z-20 shrink-0 gap-2 shadow-lg"
+      class="h-16 bg-gray-900/50 border-b border-gray-800 flex items-center justify-between px-4 z-20 shrink-0 gap-2 shadow-lg backdrop-blur-md"
     >
       <!-- Left: Tune & Practice -->
       <div class="flex items-center gap-2">
@@ -115,7 +115,7 @@
       <!-- Center: Note Display -->
       <div class="flex flex-col items-center justify-center">
         <div
-          class="flex items-baseline space-x-2 bg-gray-800/50 px-4 py-1 rounded-lg border border-gray-700"
+          class="flex items-baseline space-x-2 bg-gray-800/80 px-4 py-1 rounded-lg border border-gray-700 shadow-md"
         >
           <span
             id="noteDisplay"
@@ -292,6 +292,26 @@
           />
         </div>
 
+        <!-- Chromatic Toggle -->
+        <div class="mb-5 border-t border-gray-700 pt-4">
+          <label
+            class="text-xs text-gray-300 flex items-center justify-between cursor-pointer group"
+          >
+            <span
+              class="font-bold uppercase tracking-wide group-hover:text-white"
+              >Enable Black Notes</span
+            >
+            <input
+              type="checkbox"
+              id="chromaticCheck"
+              class="rounded bg-gray-700 border-gray-600 text-blue-500 w-4 h-4"
+            />
+          </label>
+          <p class="text-[10px] text-gray-500 mt-1">
+            Shows sharps/flats (13 lanes)
+          </p>
+        </div>
+
         <div
           class="pt-4 border-t border-gray-700 flex justify-between items-center"
         >
@@ -316,7 +336,7 @@
     </div>
 
     <!-- Game Canvas -->
-    <div class="relative flex-1 w-full overflow-hidden bg-gray-900">
+    <div class="relative flex-1 w-full overflow-hidden bg-[#030712]">
       <canvas id="gameCanvas"></canvas>
 
       <!-- Start Screen -->
@@ -406,30 +426,55 @@
       let analyser, microphone, dataArray, gainNode;
       let isAudioInitialized = false;
 
-      const noteLabels = ["Do", "Re", "Mi", "Fa", "Sol", "La", "Si", "Do"];
-      const laneColors = [
-        "#1f2937",
-        "#111827",
-        "#1f2937",
-        "#111827",
-        "#1f2937",
-        "#111827",
-        "#1f2937",
-        "#111827",
-      ];
-      const noteColors = [
-        "hsl(0, 80%, 60%)",
-        "hsl(30, 80%, 60%)",
-        "hsl(60, 80%, 50%)",
-        "hsl(120, 70%, 50%)",
-        "hsl(180, 70%, 50%)",
-        "hsl(240, 70%, 60%)",
-        "hsl(280, 70%, 60%)",
-        "hsl(0, 80%, 60%)",
+      // NOTE CONFIGURATION
+      const DIATONIC_LABELS = ["Do", "Re", "Mi", "Fa", "Sol", "La", "Si", "Do"];
+      // 0=Do(C), 1=Do#, 2=Re(D), 3=Re#, 4=Mi(E), 5=Fa(F), 6=Fa#, 7=Sol(G), 8=Sol#, 9=La(A), 10=La#, 11=Si(B), 12=Do
+      const CHROMATIC_LABELS = [
+        "Do",
+        "Do#",
+        "Re",
+        "Re#",
+        "Mi",
+        "Fa",
+        "Fa#",
+        "Sol",
+        "Sol#",
+        "La",
+        "La#",
+        "Si",
+        "Do",
       ];
 
-      // MIDI CONFIG: C3 = 48 (130Hz)
-      // We default to C3-C4 range
+      // Colors for Chromatic (13 steps)
+      // Rainbow spectrum for 12 semitones
+      const CHROMATIC_COLORS = [
+        "hsl(0, 80%, 60%)", // C  Red
+        "hsl(15, 80%, 60%)", // C#
+        "hsl(30, 80%, 60%)", // D  Orange
+        "hsl(45, 80%, 60%)", // D#
+        "hsl(60, 80%, 50%)", // E  Yellow
+        "hsl(120, 70%, 50%)", // F  Green
+        "hsl(150, 70%, 50%)", // F#
+        "hsl(180, 70%, 50%)", // G  Cyan
+        "hsl(210, 70%, 60%)", // G#
+        "hsl(240, 70%, 60%)", // A  Blue
+        "hsl(260, 70%, 60%)", // A#
+        "hsl(280, 70%, 60%)", // B  Purple
+        "hsl(0, 80%, 60%)", // C  Red (High)
+      ];
+
+      // Colors for Diatonic (8 steps)
+      const DIATONIC_COLORS = [
+        "hsl(0, 80%, 60%)", // Do
+        "hsl(30, 80%, 60%)", // Re
+        "hsl(60, 80%, 50%)", // Mi
+        "hsl(120, 70%, 50%)", // Fa
+        "hsl(180, 70%, 50%)", // Sol
+        "hsl(240, 70%, 60%)", // La
+        "hsl(280, 70%, 60%)", // Si
+        "hsl(0, 80%, 60%)", // Do
+      ];
+
       let baseMIDINote = 48; // C3
       let isTuning = false;
 
@@ -438,7 +483,110 @@
         smoothingBuffer: 4,
         ballPhysicsSpeed: 12,
         gameSpeed: 200,
+        chromaticMode: false, // New Setting
       };
+
+      // Helper getters
+      function getLaneCount() {
+        return config.chromaticMode ? 13 : 8;
+      }
+      function getLabels() {
+        return config.chromaticMode ? CHROMATIC_LABELS : DIATONIC_LABELS;
+      }
+      function getColors() {
+        return config.chromaticMode ? CHROMATIC_COLORS : DIATONIC_COLORS;
+      }
+
+      /* -------------------------------------------------------------------------- */
+      /* GAME ENGINE (Canvas, State, Resize)                                        */
+      /* -------------------------------------------------------------------------- */
+      const canvas = document.getElementById("gameCanvas");
+      const ctx = canvas.getContext("2d");
+
+      let state = {
+        running: false,
+        score: 0,
+        speed: 200,
+        walls: [],
+        playerY: 0,
+        currentNoteIdx: 0,
+        laneHeight: 0,
+        lastTime: 0,
+        spawnTimer: 0,
+        ignoreInput: false,
+        rawPlayerY: 0,
+        isSinging: false,
+        silenceTimer: 0,
+      };
+
+      function resize() {
+        canvas.width = canvas.parentElement.clientWidth;
+        canvas.height = canvas.parentElement.clientHeight;
+        state.laneHeight = canvas.height / getLaneCount();
+        if (!state.running) {
+          state.playerY = canvas.height / 2;
+          state.rawPlayerY = state.playerY;
+        }
+      }
+      window.addEventListener("resize", resize);
+
+      /* -------------------------------------------------------------------------- */
+      /* WALL CLASS (MOVED HERE TO FIX REFERENCE ERROR)                             */
+      /* -------------------------------------------------------------------------- */
+      class Wall {
+        constructor() {
+          this.x = canvas.width;
+          this.w = 80;
+          // Correctly use dynamic lane count
+          this.holeIdx = Math.floor(Math.random() * getLaneCount());
+          this.passed = false;
+        }
+        update(dt) {
+          this.x -= state.speed * dt;
+        }
+        draw(ctx) {
+          let lh = state.laneHeight;
+          let count = getLaneCount();
+          let labels = getLabels();
+
+          let visualRow = count - 1 - this.holeIdx;
+          let holeY = visualRow * lh;
+
+          ctx.fillStyle = "#92400e";
+          if (visualRow > 0) {
+            ctx.fillRect(this.x, 0, this.w, holeY);
+            ctx.strokeStyle = "rgba(0,0,0,0.2)";
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(this.x + 20, 0);
+            ctx.lineTo(this.x + 20, holeY);
+            ctx.stroke();
+          }
+          let bottomY = holeY + lh;
+          if (bottomY < canvas.height) {
+            ctx.fillRect(this.x, bottomY, this.w, canvas.height - bottomY);
+            ctx.beginPath();
+            ctx.moveTo(this.x + 20, bottomY);
+            ctx.lineTo(this.x + 20, canvas.height);
+            ctx.stroke();
+          }
+          ctx.strokeStyle = "#facc15";
+          ctx.lineWidth = 4;
+          ctx.strokeRect(this.x, holeY, this.w, lh);
+          ctx.fillStyle = "#fff";
+          ctx.font = "bold 28px Fredoka";
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.fillText(
+            labels[this.holeIdx],
+            this.x + this.w / 2,
+            holeY + lh / 2
+          );
+        }
+      }
+
+      // Init resize
+      resize();
 
       /* -------------------------------------------------------------------------- */
       /* UI CONTROLLERS                                                             */
@@ -448,6 +596,7 @@
       const smoothSlider = document.getElementById("smoothSlider");
       const physSlider = document.getElementById("physSlider");
       const statsCheck = document.getElementById("showStatsCheck");
+      const chromaticCheck = document.getElementById("chromaticCheck");
       const practiceBtn = document.getElementById("practiceBtn");
 
       document
@@ -481,6 +630,12 @@
         const stats = document.getElementById("nerdStats");
         if (e.target.checked) stats.classList.remove("hidden");
         else stats.classList.add("hidden");
+      });
+
+      chromaticCheck.addEventListener("change", (e) => {
+        config.chromaticMode = e.target.checked;
+        resize();
+        state.walls = [];
       });
 
       let practiceMode = false;
@@ -568,8 +723,8 @@
         if (dStat) dStat.innerText = "Listening";
 
         // AutoCorrelation
-        const minPeriod = Math.floor(sampleRate / 1200); // Up to High C5
-        const maxPeriod = Math.floor(sampleRate / 60); // Down to Low C2
+        const minPeriod = Math.floor(sampleRate / 1200);
+        const maxPeriod = Math.floor(sampleRate / 60);
 
         let maxCorr = 0;
         let correlations = new Array(maxPeriod).fill(0);
@@ -604,7 +759,7 @@
       }
 
       /* -------------------------------------------------------------------------- */
-      /* TUNING SYSTEM (OCTAVE SELECTOR)                                            */
+      /* TUNING SYSTEM                                                              */
       /* -------------------------------------------------------------------------- */
       const tuneBtn = document.getElementById("tuneBtn");
       tuneBtn.addEventListener("click", async () => {
@@ -652,27 +807,19 @@
           samples.sort((a, b) => a - b);
           const median = samples[Math.floor(samples.length / 2)];
 
-          // Find Nearest C Octave
-          // We want median to be around middle of range (G)
-          // If median ~196Hz (G3), Base should be C3 (130Hz)
-          // If median ~98Hz (G2), Base should be C2 (65Hz)
-
-          // Freq of C2=65.4, C3=130.8, C4=261.6
-          // Let's check distance to these centers (G2=98, G3=196, G4=392)
-
           const distG2 = Math.abs(median - 98);
           const distG3 = Math.abs(median - 196);
           const distG4 = Math.abs(median - 392);
 
           let label = "";
           if (distG2 < distG3 && distG2 < distG4) {
-            baseMIDINote = 36; // C2 (Low/Bass)
+            baseMIDINote = 36; // C2
             label = "C2-C3";
           } else if (distG3 < distG4) {
-            baseMIDINote = 48; // C3 (Mid/Tenor)
+            baseMIDINote = 48; // C3
             label = "C3-C4";
           } else {
-            baseMIDINote = 60; // C4 (High/Soprano)
+            baseMIDINote = 60; // C4
             label = "C4-C5";
           }
 
@@ -702,82 +849,41 @@
 
         document.getElementById("debugHz").innerText = Math.round(freq);
 
-        // Convert Freq to MIDI Note Number
-        // MIDI 69 = A4 = 440Hz
         let midiNum = 12 * (Math.log(freq / 440) / Math.log(2)) + 69;
         let roundedMidi = Math.round(midiNum);
 
         document.getElementById("debugMidi").innerText = roundedMidi;
 
-        // Calculate Offset from our Base C
         let diff = roundedMidi - baseMIDINote;
 
-        // Check if within our 1-octave range (0 to 12)
-        // 0=Do(C), 12=High Do(C)
-        // Map Major Scale Intervals: 0, 2, 4, 5, 7, 9, 11, 12
-
-        let idx = -1;
-        if (diff === 0) idx = 0; // Low Do
-        else if (diff === 2) idx = 1; // Re
-        else if (diff === 4) idx = 2; // Mi
-        else if (diff === 5) idx = 3; // Fa
-        else if (diff === 7) idx = 4; // Sol
-        else if (diff === 9) idx = 5; // La
-        else if (diff === 11) idx = 6; // Si
-        else if (diff === 12) idx = 7; // High Do
-
-        // Out of bounds/Chromatic handling
-        // If user hits C# (1), map to C (0) or D (1)?
-        // Let's snap to nearest diatonic
-        if (idx === -1) {
-          if (diff === 1) idx = 0; // C# -> C
-          else if (diff === 3) idx = 2; // D# -> E
-          else if (diff === 6) idx = 3; // F# -> F
-          else if (diff === 8) idx = 4; // G# -> G
-          else if (diff === 10) idx = 6; // A# -> B
-
-          // Range clamping
-          if (diff < 0) idx = 0; // Too low -> C
-          if (diff > 12) idx = 7; // Too high -> High C
+        // CHROMATIC MODE (Simplest)
+        if (config.chromaticMode) {
+          // 0 to 12 are valid.
+          if (diff < 0) return 0;
+          if (diff > 12) return 12;
+          return diff; // 0=Do, 1=Do#, etc.
         }
 
-        return idx;
-      }
+        // DIATONIC MODE (Strict)
+        const diatonicMap = {
+          0: 0, // Do
+          2: 1, // Re
+          4: 2, // Mi
+          5: 3, // Fa
+          7: 4, // Sol
+          9: 5, // La
+          11: 6, // Si
+          12: 7, // High Do
+        };
 
-      /* -------------------------------------------------------------------------- */
-      /* GAME ENGINE                                                                */
-      /* -------------------------------------------------------------------------- */
-      const canvas = document.getElementById("gameCanvas");
-      const ctx = canvas.getContext("2d");
-      const LANES = 8;
-
-      let state = {
-        running: false,
-        score: 0,
-        speed: 200,
-        walls: [],
-        playerY: 0,
-        currentNoteIdx: 0,
-        laneHeight: 0,
-        lastTime: 0,
-        spawnTimer: 0,
-        ignoreInput: false,
-        rawPlayerY: 0,
-      };
-
-      function resize() {
-        canvas.width = canvas.parentElement.clientWidth;
-        canvas.height = canvas.parentElement.clientHeight;
-        state.laneHeight = canvas.height / LANES;
-        if (!state.running) {
-          state.playerY = canvas.height / 2;
-          state.rawPlayerY = state.playerY;
+        if (diff in diatonicMap) {
+          return diatonicMap[diff];
         }
-      }
-      window.addEventListener("resize", resize);
-      resize();
 
-      // Click Lane Sound
+        return -1;
+      }
+
+      // Click Lane Sound Logic
       canvas.addEventListener("mousedown", (e) => {
         const rect = canvas.getBoundingClientRect();
         const y = e.clientY - rect.top;
@@ -811,25 +917,34 @@
         volBar.classList.add("bg-gray-500");
         volBar.classList.remove("bg-green-500");
 
-        // Calculate Freq from MIDI
-        const musicalIndex = LANES - 1 - laneIndex;
-        const semitonesMap = [0, 2, 4, 5, 7, 9, 11, 12];
-        const targetMIDI = baseMIDINote + semitonesMap[musicalIndex];
+        // Lane Index to MIDI Semitone
+        const count = getLaneCount();
+        const musicalIndex = count - 1 - laneIndex;
+        let semitoneOffset = 0;
+
+        if (config.chromaticMode) {
+          semitoneOffset = musicalIndex;
+        } else {
+          const semitonesMap = [0, 2, 4, 5, 7, 9, 11, 12];
+          semitoneOffset = semitonesMap[musicalIndex];
+        }
+
+        const targetMIDI = baseMIDINote + semitoneOffset;
         const freq = 440 * Math.pow(2, (targetMIDI - 69) / 12);
 
         const osc = audioCtx.createOscillator();
         const g = audioCtx.createGain();
-        osc.type = "sine";
+        osc.type = "triangle";
         osc.frequency.value = freq;
 
         g.gain.setValueAtTime(0, audioCtx.currentTime);
-        g.gain.linearRampToValueAtTime(0.8, audioCtx.currentTime + 0.05);
-        g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.6);
+        g.gain.linearRampToValueAtTime(0.5, audioCtx.currentTime + 0.05);
+        g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 1.0);
 
         osc.connect(g);
         g.connect(audioCtx.destination);
         osc.start();
-        osc.stop(audioCtx.currentTime + 0.6);
+        osc.stop(audioCtx.currentTime + 1.0);
 
         toneTimeout = setTimeout(() => {
           state.ignoreInput = false;
@@ -838,60 +953,14 @@
         }, 600);
       }
 
-      class Wall {
-        constructor() {
-          this.x = canvas.width;
-          this.w = 80;
-          this.holeIdx = Math.floor(Math.random() * LANES);
-          this.passed = false;
-        }
-        update(dt) {
-          this.x -= state.speed * dt;
-        }
-        draw(ctx) {
-          let lh = state.laneHeight;
-          let visualRow = LANES - 1 - this.holeIdx;
-          let holeY = visualRow * lh;
-
-          ctx.fillStyle = "#92400e";
-          if (visualRow > 0) {
-            ctx.fillRect(this.x, 0, this.w, holeY);
-            ctx.strokeStyle = "rgba(0,0,0,0.2)";
-            ctx.lineWidth = 2;
-            ctx.beginPath();
-            ctx.moveTo(this.x + 20, 0);
-            ctx.lineTo(this.x + 20, holeY);
-            ctx.stroke();
-          }
-          let bottomY = holeY + lh;
-          if (bottomY < canvas.height) {
-            ctx.fillRect(this.x, bottomY, this.w, canvas.height - bottomY);
-            ctx.beginPath();
-            ctx.moveTo(this.x + 20, bottomY);
-            ctx.lineTo(this.x + 20, canvas.height);
-            ctx.stroke();
-          }
-          ctx.strokeStyle = "#facc15";
-          ctx.lineWidth = 4;
-          ctx.strokeRect(this.x, holeY, this.w, lh);
-          ctx.fillStyle = "#fff";
-          ctx.font = "bold 28px Fredoka";
-          ctx.textAlign = "center";
-          ctx.textBaseline = "middle";
-          ctx.fillText(
-            noteLabels[this.holeIdx],
-            this.x + this.w / 2,
-            holeY + lh / 2
-          );
-        }
-      }
-
       let noteBuffer = [];
       let stableNote = 3;
       let stabilityCounter = 0;
 
       function update(dt) {
         if (!isAudioInitialized) return;
+
+        let isSingingFrame = false;
 
         if (!state.ignoreInput) {
           analyser.getFloatTimeDomainData(dataArray);
@@ -906,9 +975,13 @@
 
           if (result.freq > 0) {
             let idx = freqToNoteIndex(result.freq);
+
             if (idx !== -1) {
+              isSingingFrame = true;
               newDetectedNote = idx;
-              let rawVisualRow = LANES - 1 - idx;
+
+              const count = getLaneCount();
+              let rawVisualRow = count - 1 - idx;
               let rawTargetPx =
                 rawVisualRow * state.laneHeight + state.laneHeight / 2;
               state.rawPlayerY += (rawTargetPx - state.rawPlayerY) * 15 * dt;
@@ -925,13 +998,26 @@
             if (stabilityCounter >= config.smoothingBuffer) {
               state.currentNoteIdx = stableNote;
               const noteEl = document.getElementById("noteDisplay");
-              noteEl.innerText = noteLabels[state.currentNoteIdx];
-              noteEl.style.color = noteColors[state.currentNoteIdx];
+              const labels = getLabels();
+              const colors = getColors();
+              noteEl.innerText = labels[state.currentNoteIdx];
+              noteEl.style.color = colors[state.currentNoteIdx % colors.length];
             }
           }
         }
 
-        let visualRow = LANES - 1 - state.currentNoteIdx;
+        if (isSingingFrame) {
+          state.isSinging = true;
+          state.silenceTimer = 0;
+        } else {
+          state.silenceTimer += dt;
+          if (state.silenceTimer > 0.15) {
+            state.isSinging = false;
+          }
+        }
+
+        const count = getLaneCount();
+        let visualRow = count - 1 - state.currentNoteIdx;
         let targetPx = visualRow * state.laneHeight + state.laneHeight / 2;
         let speedFactor = config.ballPhysicsSpeed;
         state.playerY += (targetPx - state.playerY) * speedFactor * dt;
@@ -950,7 +1036,12 @@
             let px = 80;
             let pr = 12;
             if (px + pr > w.x && px - pr < w.x + w.w) {
-              let visualRow = LANES - 1 - w.holeIdx;
+              if (!state.isSinging) {
+                gameOver();
+                return;
+              }
+
+              let visualRow = count - 1 - w.holeIdx;
               let holeTop = visualRow * state.laneHeight;
               let holeBot = holeTop + state.laneHeight;
               let pad = 8;
@@ -973,29 +1064,51 @@
 
       function draw() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        for (let i = 0; i < LANES; i++) {
+
+        const count = getLaneCount();
+        const labels = getLabels();
+
+        for (let i = 0; i < count; i++) {
           let y = i * state.laneHeight;
+
+          let laneCenter = y + state.laneHeight / 2;
+          let dist = Math.abs(laneCenter - state.playerY);
+          let intensity = Math.pow(
+            Math.max(0, 1 - dist / (state.laneHeight * 2.0)),
+            2
+          );
+
+          let baseAlpha = 0.05;
+          let glowAlpha = intensity * 0.25;
+
           if (i === activeFlash || i === practiceTargetLane) {
             ctx.fillStyle = "#374151";
           } else {
-            ctx.fillStyle = laneColors[i];
+            ctx.fillStyle = `rgba(31, 41, 55, ${baseAlpha + glowAlpha})`;
           }
           ctx.fillRect(0, y, canvas.width, state.laneHeight);
 
-          let musicalIdx = LANES - 1 - i;
-          ctx.fillStyle = noteColors[musicalIdx];
+          let musicalIdx = count - 1 - i;
+
+          let textAlpha = 0.1 + intensity * 0.4;
+          ctx.fillStyle = `rgba(255, 255, 255, ${textAlpha})`;
+
           ctx.font = "bold 30px Fredoka";
           ctx.textAlign = "left";
           ctx.textBaseline = "middle";
-          ctx.fillText(noteLabels[musicalIdx], 20, y + state.laneHeight / 2);
+          ctx.fillText(labels[musicalIdx], 20, y + state.laneHeight / 2);
 
-          // Helper Hertz Display next to Note
-          // Calculate Hz for this lane based on baseMIDINote
-          const semitonesMap = [0, 2, 4, 5, 7, 9, 11, 12];
-          const targetMIDI = baseMIDINote + semitonesMap[musicalIdx];
-          const freq = Math.round(440 * Math.pow(2, (targetMIDI - 69) / 12));
-          ctx.fillStyle = "rgba(255,255,255,0.1)";
           ctx.font = "10px monospace";
+          let semitoneOffset = 0;
+          if (config.chromaticMode) {
+            semitoneOffset = musicalIdx;
+          } else {
+            const map = [0, 2, 4, 5, 7, 9, 11, 12];
+            semitoneOffset = map[musicalIdx];
+          }
+          const freq = Math.round(
+            440 * Math.pow(2, (baseMIDINote + semitoneOffset - 69) / 12)
+          );
           ctx.fillText(`${freq}Hz`, 65, y + state.laneHeight / 2 + 12);
 
           ctx.fillStyle = "rgba(255,255,255,0.2)";
@@ -1022,20 +1135,29 @@
 
         state.walls.forEach((w) => w.draw(ctx));
 
-        ctx.beginPath();
-        ctx.arc(80, state.rawPlayerY, 15, 0, Math.PI * 2);
-        ctx.fillStyle = "rgba(255, 255, 255, 0.2)";
-        ctx.fill();
+        if (state.isSinging) {
+          ctx.beginPath();
+          ctx.arc(80, state.rawPlayerY, 15, 0, Math.PI * 2);
+          ctx.fillStyle = "rgba(255, 255, 255, 0.2)";
+          ctx.fill();
+        }
 
         ctx.beginPath();
         ctx.arc(80, state.playerY, 15, 0, Math.PI * 2);
-        let noteColor = noteColors[state.currentNoteIdx];
-        ctx.fillStyle = noteColor;
-        ctx.shadowBlur = 20;
-        ctx.shadowColor = noteColor;
+
+        const colors = getColors();
+        if (state.isSinging) {
+          let noteColor = colors[state.currentNoteIdx % colors.length];
+          ctx.fillStyle = noteColor;
+          ctx.shadowBlur = 20;
+          ctx.shadowColor = noteColor;
+          ctx.strokeStyle = "#fff";
+        } else {
+          ctx.fillStyle = "#4b5563";
+          ctx.shadowBlur = 0;
+          ctx.strokeStyle = "#9ca3af";
+        }
         ctx.fill();
-        ctx.shadowBlur = 0;
-        ctx.strokeStyle = "#fff";
         ctx.lineWidth = 3;
         ctx.stroke();
 
@@ -1043,7 +1165,7 @@
         ctx.font = "bold 14px Fredoka";
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
-        ctx.fillText(noteLabels[state.currentNoteIdx], 80, state.playerY);
+        ctx.fillText(labels[state.currentNoteIdx], 80, state.playerY);
       }
 
       function loop(ts) {
@@ -1066,8 +1188,8 @@
             state.running = true;
             state.lastTime = performance.now();
             document.getElementById("scoreDisplay").innerText = "0";
-            state.currentNoteIdx = 3;
-            state.playerY = canvas.height / 2;
+            state.currentNoteIdx = config.chromaticMode ? 6 : 3;
+            resize();
             state.playerVel = 0;
             requestAnimationFrame(loop);
           }
